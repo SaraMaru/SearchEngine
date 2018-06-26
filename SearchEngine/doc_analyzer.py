@@ -4,16 +4,20 @@ import os
 import glob
 import json
 
+
 CLUSTER_SIZE = 200
+
 
 def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
+
 def save_as_json(data,json_name):
 	with open(json_name, 'w') as f:
 		json.dump(data, f)
 	print("save_as_json() completed")
+
 
 def read_data_from_files(file_names):
 	postings = dict()
@@ -83,6 +87,7 @@ def read_data_from_files(file_names):
 	"""
 	return data
 
+
 def read_data_from_path(src_path, dest_path):
 	json_name = dest_path+"filenames.json"
 	old_file_names = list()
@@ -115,9 +120,44 @@ def read_data_from_path(src_path, dest_path):
 	save_as_json(file_names, json_name)
 
 
-###################################################################################
+def calc_idf(file_path,json_path,output_path):
+	all_df = dict()
+	json_names = glob.glob(json_path+"tf*.json")
+	for json_name in json_names:
+		with open(json_name, 'r') as f:
+			tf_info = json.load(f)
+		for term,dic in tf_info.items():
+			if term in all_df:
+				all_df[term] += dic["-1"] # dic[-1] saves df
+			else:
+				all_df[term] = dic["-1"]
+		print("Finished dealing with",json_name)
 
-if __name__ == "__main__":
-	source_path = "../../one/"
-	destination_path = "../TermResource/"
-	read_data_from_path(source_path, destination_path)
+	file_names = glob.glob(file_path+"*.html")
+	file_num = len(file_names)
+	all_idf = dict()
+	for term,df in all_df.items():
+		all_idf[term] = math.log(file_num/df)
+	print(all_idf)
+
+	save_as_json(all_idf, output_path+"idf.json")
+	print("calc_idf() completed")
+
+
+'''def gen_VSM(file_path,json_path,dest_path):
+	file_num = len( glob.glob(file_path+"*.html") )
+	with open(src_path+"idf.json", 'r') as f:
+		idf_dict = json.load(f)
+	term_num = len(idf_dict)
+
+	doc_vecs = dict()
+	for doc in range():
+
+	tf_json_names = glob.glob(src_path+"tf*.json")
+	for tf_json_name in tf_json_names:
+		with open(tf_json_name, 'r') as f:
+			tf_info = json.load(f)
+			wf_idf = (1+math.log(tf)) * idf
+
+	save_as_json(doc_vecs, dest_path+"VSM.json")
+	print("gen_VSM() completed")'''

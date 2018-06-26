@@ -50,6 +50,18 @@ def get_similar_terms(input_term,pos):
 	new_term_weight_dict = choose_similar_terms(term_weight_dict)
 	return new_term_weight_dict
 
+def get_the_most_similar_term(input_term,pos):
+	term_weight_dict = calc_similarity(input_term,pos)
+	if len(term_weight_dict)==0:
+		return None
+	max_weight = 0
+	result = None
+	for term,weight in term_weight_dict.items():
+		if term!=input_term and weight>=max_weight:
+			result = term
+			max_weight = weight
+	return result
+
 ###################################################################################
 
 if __name__ == "__main__":
