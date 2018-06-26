@@ -5,7 +5,7 @@ import os
 import glob
 import json
 
-CLUSTER_SIZE = 10
+CLUSTER_SIZE = 200
 
 def chunks(l, n):
     for i in range(0, len(l), n):
@@ -16,7 +16,7 @@ def save_as_json(data,json_name):
 		json.dump(data, f)
 	print("save_as_json() completed")
 
-def read_data_from_files(file_names, start_index):
+def read_data_from_files(file_names):
 	postings = dict()
 	"""
 	postings is likes this:
@@ -87,30 +87,35 @@ def read_data_from_files(file_names, start_index):
 
 def read_data_from_path(src_path, dest_path):
 	json_name = dest_path+"filenames.json"
+	old_file_names = list()
 	if os.path.exists(json_name):
 		with open(json_name, 'r') as f:
 			old_file_names = json.load(f)
 	file_names = glob.glob(src_path+"*.html")
 	save_as_json(file_names, json_name)
 	new_file_names = list(set(file_names).difference(set(old_file_names)))
-	print(new_file_names)
+	print("Found",len(new_file_names),"new files.")
+	
 	data_file_names = glob.glob(dest_path+"data[0-9]*.json")
 	indices = list()
 	for name in data_file_names:
 		str_id = re.search("data([0-9]*).json",name).group(1)
 		indices.append(int(str_id))
-	last_index = max(indices)
-	print(last_index)
+	if len(indices)>0: 
+		last_index = max(indices)
+	else:
+		last_index = -1
 
-	length = len(new_file_names)
 	start_index = last_index + 1
+	print("The new data file index will start from",start_index,".")
 	for index,file_names_part in enumerate(chunks(new_file_names,CLUSTER_SIZE)):
-		data = read_data_from_files(file_names_part,start_index)
-		save_as_json(data, dest_path+"data"+str(index)+".json")
-		start_index += CLUSTER_SIZE
+		data = read_data_from_files(file_names_part)
+		save_as_json(data, dest_path+"data"+str(start_index+index)+".json")
+
 
 ###################################################################################
+
 if __name__ == "__main__":
-	source_path = "E:\\Jiaming\\Documents\\课程资料及作业\\信息检索\\src\\"
+	source_path = "../../src/"
 	destination_path = "../TermResource/"
 	read_data_from_path(source_path, destination_path)
