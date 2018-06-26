@@ -1,10 +1,13 @@
 from nltk.corpus import wordnet as wn 
 
-# weight = sum_for_all_synsets((count_synset_interm+a)*(count_synset_outterm+b)) / sum_for_all_synsets(count_synset_interm+a)
-def calc_similarity(input_term):
+'''
+weight = 
+	sum_for_all_synsets((count_synset_interm+a)*(count_synset_outterm+b)) / sum_for_all_synsets(count_synset_interm+a)
+'''
+def calc_similarity(input_term,pos):
 	a = 2
 	b = 2
-	synsets = wn.synsets(input_term) # synsets may be []
+	synsets = wn.synsets(input_term,pos) # synsets may be []
 	term_weight_dict = dict()
 	count_interm = 0
 
@@ -17,6 +20,7 @@ def calc_similarity(input_term):
 		count_interm += count_synset_interm
 
 		for lemma in synset.lemmas():
+			#print(lemma,lemma.count())
 			term = lemma.name()
 			if term!=input_term:
 				weight = (count_synset_interm+a) * (lemma.count()+b)
@@ -38,19 +42,21 @@ def choose_similar_terms(term_weight_dict):
 			new_term_weight_dict[term] = (weight/max_weight)**smooth
 	return new_term_weight_dict
 
-def get_similar_terms(input_term):
-	term_weight_dict = calc_similarity(input_term)
+def get_similar_terms(input_term,pos):
+	term_weight_dict = calc_similarity(input_term,pos)
 	#print(term_weight_dict)
+	if len(term_weight_dict)==0:
+		return dict()
 	new_term_weight_dict = choose_similar_terms(term_weight_dict)
 	return new_term_weight_dict
 
 ###################################################################################
 
 if __name__ == "__main__":
-	print(get_similar_terms("USA"))
-	print(get_similar_terms("car"))
-	print(get_similar_terms("search"))
-	print(get_similar_terms("seek"))
-	print(get_similar_terms("happy"))
-	print(get_similar_terms("felicitous"))
-	print(get_similar_terms("sad"))
+	print(get_similar_terms("USA",wn.NOUN))
+	print(get_similar_terms("bullet",wn.NOUN))
+	print(get_similar_terms("search",wn.VERB))
+	print(get_similar_terms("seek",wn.VERB))
+	print(get_similar_terms("happy",wn.ADJ))
+	print(get_similar_terms("felicitous",wn.ADJ))
+	print(get_similar_terms("frightened",wn.ADJ))

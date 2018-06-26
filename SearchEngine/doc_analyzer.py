@@ -1,5 +1,4 @@
 import nltk
-from nltk.stem.snowball import SnowballStemmer
 import re
 import os
 import glob
@@ -32,7 +31,7 @@ def read_data_from_files(file_names):
 		#print(content)
 		tokens = nltk.word_tokenize(content)
 		#print(tokens)
-		stemmer = SnowballStemmer("english")
+		stemmer = nltk.stem.snowball.SnowballStemmer("english")
 		stemmed_tokens = [ stemmer.stem(token) for token in tokens ]
 		#print(stemmed_tokens)
 		result_tokens = []
@@ -54,15 +53,15 @@ def read_data_from_files(file_names):
 			else:
 				postings[token] = dict()
 				postings[token][doc_id] = [pos]
-	print(postings)
+	#print(postings)
 
 	tf_info = dict()
 	"""
 	tf_info is likes this:
-	{ term_a : {    -1    : tf_a  ,
+	{ term_a : {    -1    : df_a  ,
 				 doc_id_x : tf_ax ,
 				 doc_id_y : tf_ay }
-	  term_b : {    -1    : tf_b  ,
+	  term_b : {    -1    : df_b  ,
 	  			 doc_id_y : tf_by ,
 			     doc_id_z : tf_bz } }
 	"""
@@ -70,13 +69,12 @@ def read_data_from_files(file_names):
 	for term,posting in postings.items():
 		if term not in tf_info:
 			tf_info[term] = dict()
-		sum = 0
+		df = 0
 		for doc_id,pos_list in posting.items():
-			length = len(pos_list)
-			tf_info[term][doc_id] = length
-			sum += length
-		tf_info[term][-1] = sum #the doc_id of -1 means total tf
-	print(tf_info)
+			tf_info[term][doc_id] = len(pos_list)
+			df += 1
+		tf_info[term][-1] = df #the doc_id of -1 means df
+	#print(tf_info)
 
 	data = [postings, tf_info]
 	"""
@@ -92,14 +90,15 @@ def read_data_from_path(src_path, dest_path):
 		with open(json_name, 'r') as f:
 			old_file_names = json.load(f)
 	file_names = glob.glob(src_path+"*.html")
-	save_as_json(file_names, json_name)
 	new_file_names = list(set(file_names).difference(set(old_file_names)))
 	print("Found",len(new_file_names),"new files.")
+	if(len(new_file_names)==0):
+		return
 	
-	data_file_names = glob.glob(dest_path+"data[0-9]*.json")
+	pos_file_names = glob.glob(dest_path+"pos[0-9]*.json")
 	indices = list()
-	for name in data_file_names:
-		str_id = re.search("data([0-9]*).json",name).group(1)
+	for name in pos_file_names:
+		str_id = re.search("pos([0-9]*).json",name).group(1)
 		indices.append(int(str_id))
 	if len(indices)>0: 
 		last_index = max(indices)
@@ -109,13 +108,16 @@ def read_data_from_path(src_path, dest_path):
 	start_index = last_index + 1
 	print("The new data file index will start from",start_index,".")
 	for index,file_names_part in enumerate(chunks(new_file_names,CLUSTER_SIZE)):
-		data = read_data_from_files(file_names_part)
-		save_as_json(data, dest_path+"data"+str(start_index+index)+".json")
+		[postings,tf_info] = read_data_from_files(file_names_part)
+		save_as_json(postings, dest_path+"pos"+str(start_index+index)+".json")
+		save_as_json(tf_info, dest_path+"tf"+str(start_index+index)+".json")
+
+	save_as_json(file_names, json_name)
 
 
 ###################################################################################
 
 if __name__ == "__main__":
-	source_path = "../../src/"
+	source_path = "../../one/"
 	destination_path = "../TermResource/"
 	read_data_from_path(source_path, destination_path)
